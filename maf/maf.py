@@ -1,10 +1,6 @@
-import ConfigParser
 import re
-from itertools import product
-from collections import namedtuple
-import hashlib
-import string
-from operator import itemgetter
+import sys
+from collections import Counter
 
 # for debugging/testing
 TEST = True
@@ -12,23 +8,23 @@ TEST = True
 if TEST:
     import pdb
 
-# import primary class, ConfigRuns
-from configrun import ConfigRuns
+# import primary class, AlignerRun
+from alignerrun import AlignerRun
 
 def create_aligner_runs(args):
     """
     Create an aligner run.
     """
     aligner_runs = dict()
-    param_spaces = dict()
+    param_spaces = Counter()
     for config_file in args.mapfiles:
-        run = ConfigRuns()
+        run = AlignerRun(args.in1, args.in2)
         with open(config_file) as config_fp:
             run.readfp(config_fp)
-        for hashkeys, command in run.command_items():
+        for hashkeys, command in run.commands():
             param_spaces[config_file] += 1
-            if not arg.size:
-                args.output_file.write("\t".join(config_file, hashkeys, command) + "\n")
+            if not args.size:
+                args.output_file.write("\t".join([config_file, hashkeys, command]) + "\n")
                 sys.stdout.write(command + "\n")
         aligner_runs[config_file] = run
 
@@ -45,28 +41,19 @@ if __name__ == "__main__":
     # MAYBE have subcommands for different read aligners
 
     parser_map = subparsers.add_parser('map', help="generate a script to run an alignment")
-    parser_map.add_argument("mapfiles", type=argparse.FileType('r'), nargs="+",
+    parser_map.add_argument("mapfiles", type=str, nargs="+",
                             help="aligner config file the specifies which parameters to test")
-    parser_map.add_argument("-o", "--output-file", type=argparse.FileType('w'),
+    parser_map.add_argument("-o", "--output-file", type=argparse.FileType('w'), required=True,
                             help="parameter output file (links file names with parameters)")
-    parser_map.add_argument("-1", help="simulated read pair 1")
-    parser_map.add_argument("-2", help="simulated read pair 2")
-    parser_map.add_argument("-s", "--size", help="return the parameter space and exit", action="store_true")
+    parser_map.add_argument("-s", "--sam-path", type=str, default="alns/",
+                            help="output path for alignment SAM files")
+    parser_map.add_argument("-e", "--eval-path", type=str, default="eval/",
+                            help="output path for evaluation files from dwgsim")
+    parser_map.add_argument("-l", "--log-path", type=str, default="log/",
+                            help="output path for standard error log")
+    parser_map.add_argument("-1", "--in1", help="simulated read pair 1", required=True)
+    parser_map.add_argument("-2", "--in2", help="simulated read pair 2", required=True)
+    parser_map.add_argument("-S", "--size", help="return the parameter space and exit", action="store_true")
     parser_map.set_defaults(func=create_aligner_runs)
     args = parser.parse_args()
     args.func(args)
-
-    
-
-    
-    if TEST:
-        a = ConfigRuns()
-        a.readfp(open("bwa-mem.cfg"))
-        run_args = dict(ref="test.fa", in1="read1.fq", in2="read2.fq", out="out.sam", log="log.stderr")
-        commands = a.commands(run_args)
-
-        s = ConfigRuns()
-        s.readfp(open("dwgsim.cfg"))
-        run_args = dict()
-        commands = a.commands(run_args)
-
