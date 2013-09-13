@@ -18,7 +18,7 @@ def create_aligner_runs(args):
     aligner_runs = dict()
     param_spaces = Counter()
     for config_file in args.mapfiles:
-        run = AlignerRun(args.in1, args.in2)
+        run = AlignerRun(args.in1, args.in2, args.log_path, args.sam_path, args.eval_path)
         with open(config_file) as config_fp:
             run.readfp(config_fp)
         for hashkeys, command in run.commands():

@@ -21,12 +21,11 @@ def make_name(name, hashkey, ext, *args):
     if len(args) == 0:
         return "%s_%s.%s" % (name, hashkey, ext)
     else:
-        other_info = "_".join(*args)
-        return "%s_%s_%s.%s" % (name, hashkey, ext, other_info)
+        other_info = "_".join(args)
+        return "%s_%s_%s.%s" % (name, hashkey, other_info, ext)
 
 class AlignerRun(object):
-    """
-    AlignerRun are a class that take a set of configurations from an
+    """AlignerRun is a class that take a set of configurations from an
     CFG file and turn these into a set of commands to run.
     """
     
@@ -45,9 +44,9 @@ class AlignerRun(object):
         self.version = None
         self.command = None
         self.evaluator = None
-        self.sam_path = curdir if sam_path is None else sam_path
-        self.eval_path = curdir if eval_path is None else eval_path
-        self.log_path = curdir if log_path is None else log_path
+        self.sam_path = sam_path
+        self.eval_path = eval_path
+        self.log_path = log_path
 
     def readfp(self, fp):
         """Parse the config file at `fp`, building a AlignerRun object for a
