@@ -2,95 +2,71 @@ import ConfigParser
 import re
 from itertools import product
 from collections import namedtuple
+import hashlib
+import string
+from operator import itemgetter
 
+# for debugging/testing
 TEST = True
 
 if TEST:
     import pdb
 
-def remove_dashes(string):
-    re.replace
+# import primary class, ConfigRuns
+from configrun import ConfigRuns
 
-class ConfigRuns(object):
+def create_aligner_runs(args):
     """
-    ConfigRuns are a class that take a set of configurations from an
-    CFG file and turn these into a set of commands to run.
+    Create an aligner run.
     """
-    
-    def __init__(self, template=None):
-        """
-        Initialize a ConfigSet, given a template
-        """
-        self.name = None
-        self._template = template
-        self._parameters = dict()
-        self.ref_name = None
-        self.ref_path = None
-        self.path = None
-        self.version = None
-        self.command = None
-        
+    aligner_runs = dict()
+    param_spaces = dict()
+    for config_file in args.mapfiles:
+        run = ConfigRuns()
+        with open(config_file) as config_fp:
+            run.readfp(config_fp)
+        for hashkeys, command in run.command_items():
+            param_spaces[config_file] += 1
+            if not arg.size:
+                args.output_file.write("\t".join(config_file, hashkeys, command) + "\n")
+                sys.stdout.write(command + "\n")
+        aligner_runs[config_file] = run
 
-    def readfp(self, fp):
-        """Parse the config file at `fp`, building a ConfigRun object for a
-        specific set of configurations given in the CFG file.
-        """
-        config = ConfigParser.ConfigParser()
-        config.readfp(fp)
-        for field, value in config.items('parameters'):
-            # split parameter vector into chunks
-            value = re.split(r", *", value)
-            self._parameters[field] = value
-        self.name = config.get('program', 'name')
-        self.path = config.get('program', 'path')
-        self.version = config.get('program', 'version')
-        self.ref_name = config.get('reference', 'ref')
-        self.ref_path = config.get('reference', 'path')
-        self.command = config.get('run', 'command')                
-    
-    @property
-    def parameters(self):
-        """
-        Return a itertools.product object of all parameter combinations.
-        """
-        params = list()
-        for key, value in self._parameters.items():
-            params.append(["%s %s" % (key, v) for v in value])
-        return product(*params)
-
-    def runkey(self, parameters):
-        """For a single run configuration, generate a key that hashes all
-        information.
-        """
-
-        
-
-    def commands(self, argdict):
-        """Make a set of all commands from the parameters by using
-        `self._template` and the non-configured arguments in `argdict`. 
-        """
-        try:
-            string.Formatter().format(self._template, **argdict)
-        except KeyError(e):
-            pdb.set_trace()
-            
-        
-        
+    if args.size:
+        # return parameter space size and exit
+        for config_file, size in param_spaces.items():
+            print "\t".join([config_file, str(size)])
+        sys.exit(0)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(prog='maf')
     subparsers = parser.add_subparsers(help="sub-commands")
-    parser_dwgsim = subparsers.add_parser('dwgsim', help="")
-    parser_dwgsim.add_argument("-s", "--seed", 
-                              help="seed, specify many arguments for many simulated read sets", 
-                              nargs="+", type=int)
+    # MAYBE have subcommands for different read aligners
+
     parser_map = subparsers.add_parser('map', help="generate a script to run an alignment")
-    parser_map.add_argument("simfile", type=argparse.FileType('r'), 
-                            help="config file returned from dwgsim")
-    parser_map.add_argument("mapfile", type=argparse.FileType('r'), 
+    parser_map.add_argument("mapfiles", type=argparse.FileType('r'), nargs="+",
                             help="aligner config file the specifies which parameters to test")
+    parser_map.add_argument("-o", "--output-file", type=argparse.FileType('w'),
+                            help="parameter output file (links file names with parameters)")
+    parser_map.add_argument("-1", help="simulated read pair 1")
+    parser_map.add_argument("-2", help="simulated read pair 2")
+    parser_map.add_argument("-s", "--size", help="return the parameter space and exit", action="store_true")
+    parser_map.set_defaults(func=create_aligner_runs)
+    args = parser.parse_args()
+    args.func(args)
+
+    
+
     
     if TEST:
         a = ConfigRuns()
         a.readfp(open("bwa-mem.cfg"))
+        run_args = dict(ref="test.fa", in1="read1.fq", in2="read2.fq", out="out.sam", log="log.stderr")
+        commands = a.commands(run_args)
+
+        s = ConfigRuns()
+        s.readfp(open("dwgsim.cfg"))
+        run_args = dict()
+        commands = a.commands(run_args)
+
