@@ -1,4 +1,4 @@
-0;95;c# MAF - Mapping Assessment Framework
+# MAF - Mapping Assessment Framework
 
 MAF is a light framework to pipeline short read mapper/aligner
 testing.

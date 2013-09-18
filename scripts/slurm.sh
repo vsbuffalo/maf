@@ -10,10 +10,10 @@ function check_in_path() {
     command -v $1 >/dev/null 2>&1 || { echo >&2 "$1 required but not in $PATH"; exit 1; }
 }
 
-check_in_path(dwgsim_eval)
-check_in_path(novoalign)
-check_in_path(bowtie2)
-check_in_path(bwa)
+check_in_path dwgsim_eval
+check_in_path novoalign
+check_in_path bowtie2
+check_in_path bwa
 
 IN1=simreads/chr2-chr10-01.bwa.read1.fastq
 IN2=simreads/chr2-chr10-01.bwa.read2.fastq
