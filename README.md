@@ -1,4 +1,4 @@
-# MAF - Mapping Assessment Framework
+0;95;c# MAF - Mapping Assessment Framework
 
 MAF is a light framework to pipeline short read mapper/aligner
 testing.
@@ -7,14 +7,14 @@ testing.
 
  - Drop-in aligner testing: simple write a standard Unix configure
    file (see `bwa-mem.cfg` for an example) with the aligner, its path,
-   version, subcommand, and which parameters you wish to test it
-   across. MAF generates a SLURM script that can be run across many
+   version, command, reference, and evaluator, and which parameters
+   you wish to test it across.
 
  - Wraps read simulators and corresponding evalution, so it goes
    directly to graphics.
 
- - Memoize entry values so that things are not needlessly re-run when
-   a new parameter is thrown in.
+ - Memoize entry values and input data so that things are not
+   needlessly re-run when a new parameter is thrown in.
 
  - Entirely streaming summarization, i.e. the assessment
    takes SAM/BAM output directly from the aligner and assess it, to
@@ -26,14 +26,22 @@ testing.
 
 ## Implementation
 
-    $ maf map -o params.txt -1 read1.fq -2 read2.fq bwa-mem.cfg bowtie2.cfg | gnu parallel bash mapscript.sh
-	$ maf join params.txt 
+Currenty MAF is run like so:
 
-It's wise to see how large the parameter space is before running
-MAF. This can be done with:
+    $ python maf/maf.py map -o test-run-1.txt -1 in1.fq -2 in2.fq bowtie2.cfg bwa-mem.cfg novoalign.cfg
 
-    $ maf map -s -1 read1.fq -2 read2.fq bwa-mem.cfg bowtie2.cfg
+This write a list of all commands to standard out, and writes an
+output file `test-run-1.txt` which is a tab-delimited file that
+contains the config file name, the hash, and the command for each run.
 
+In future runs, you may wish to augment your past runs's results
+(since these take a while to run). It's possible to only generate
+commands that are new by
+[http://en.wikipedia.org/wiki/Memoize](memoizing) past parameters that
+have been run.
+
+The commands output to standard out can than easily be run in GNU
+parallel or SGE/SLURM via shell scripts.
 
 ## Pre-Run Checks
 

@@ -29,7 +29,7 @@ class AlignerRun(object):
     CFG file and turn these into a set of commands to run.
     """
     
-    def __init__(self, in1, in2, log_path=None, sam_path=None, eval_path=None):
+    def __init__(self, in1, in2, log_path=None, sam_path=None, eval_path=None, memoize_file=None):
         """
         Initialize a ConfigSet, given a template
         """
@@ -47,6 +47,11 @@ class AlignerRun(object):
         self.sam_path = sam_path
         self.eval_path = eval_path
         self.log_path = log_path
+        self.memoized_ids = set()
+        if memoize_file is not None:
+            with open(memoize_file) as f:
+                for line in f:
+                    self.memoized_ids.add(line.split("\t")[1])
 
     def readfp(self, fp):
         """Parse the config file at `fp`, building a AlignerRun object for a
@@ -65,7 +70,11 @@ class AlignerRun(object):
         except ConfigParser.NoSectionError:
             pass
         self.name = config.get('program', 'name')
-        self.path = config.get('program', 'path')
+        try:
+            # path is optional
+            self.path = config.get('program', 'path')
+        except ConfigParser.NoOptionError:
+            self.path = None
         self.version = config.get('program', 'version')
         self.ref_name = config.get('reference', 'ref')
         self.ref_path = config.get('reference', 'path')
@@ -77,13 +86,6 @@ class AlignerRun(object):
         """Return formatters in the run->command value.
         """
         return tuple(FORMATTERS.findall(self.command))
-
-    @property
-    def fullref(self):
-        """
-        Full reference (path plus name).
-        """
-        return path.join(self.ref_path, self.ref_name)
     
     @property
     def parameters(self):
@@ -111,7 +113,7 @@ class AlignerRun(object):
         """
         tmp_hash_set = set()
         for params in self.parameter_strings:
-            keyhash = make_hash_key(" ".join([self.name, self.fullref, self.version, params]))
+            keyhash = make_hash_key(" ".join([self.name, self.ref_path, self.version, params]))
             assert (keyhash not in tmp_hash_set) # collision check, just in case
             tmp_hash_set.add(keyhash)
             yield keyhash
@@ -120,17 +122,21 @@ class AlignerRun(object):
         """Make a set of all commands from the parameters by using
         `self._template` and the non-configured arguments in `argdict`. 
 
-        command=bowtie2 -x {ref} {parameters} -1 {in1} -2 {in2} 2> {log} | tee {aln_out} | {evaluator} > {eval_out}
+        command={program} -x {ref} {parameters} -1 {in1} -2 {in2} 2> {log} | tee {aln_out} | {evaluator} > {eval_out}
         """
         for hashkey, paramstr in izip(self.hashkeys, self.parameter_strings):
+            if hashkey in self.memoized_ids:
+                continue
             sam_out = path.join(self.sam_path, make_name(self.name, hashkey, "sam"))
             eval_out = path.join(self.eval_path, make_name(self.name, hashkey, "txt"))
             log_out = path.join(self.log_path, make_name(self.name, hashkey, "txt", "log"))
-
+            
+            program = self.name if self.path is None else self.name
+            
             # build a dictionary with the constant arguments and
             # this particular set of parameters
             tmpdict = dict(in1=self.in1, in2=self.in2, eval_out=eval_out, 
-                           ref=self.fullref, parameters=paramstr,
+                           ref=self.ref_path, parameters=paramstr, program=program,
                            sam_out=sam_out, log_out=log_out, evaluator=self.evaluator)
             
             try:
