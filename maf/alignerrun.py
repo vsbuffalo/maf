@@ -58,6 +58,7 @@ class AlignerRun(object):
         specific set of configurations given in the CFG file.
         """
         config = ConfigParser.ConfigParser()
+        config.optionxform = str # prevent lowercase, which can screw up parameters
         config.readfp(fp)
         for field, value in config.items('parameters'):
             # split parameter vector into chunks
