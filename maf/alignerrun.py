@@ -18,10 +18,12 @@ def make_hash_key(key):
     return hashlib.sha224(key).hexdigest()[:HASHLENGTH]
 
 def make_name(name, hashkey, ext, *args):
+    name = name.replace(' ', '_') # sanitize name
+    assert(" " not in ext)
     if len(args) == 0:
         return "%s_%s.%s" % (name, hashkey, ext)
     else:
-        other_info = "_".join(args)
+        other_info = "_".join([a.replace(' ', '_') for a in args])
         return "%s_%s_%s.%s" % (name, hashkey, other_info, ext)
 
 class AlignerRun(object):
