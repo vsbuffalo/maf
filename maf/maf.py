@@ -18,7 +18,7 @@ def create_aligner_runs(args):
     aligner_runs = dict()
     param_spaces = Counter()
     for config_file in args.mapfiles:
-        run = AlignerRun(args.in1, args.in2, args.log_path, args.sam_path, args.eval_path, memoize_file=args.memoize)
+        run = AlignerRun(args.in1, args.in2, args.log_path, args.sam_path, args.eval_path, time_path=args.time_path, memoize_file=args.memoize)
         with open(config_file) as config_fp:
             run.readfp(config_fp)
         for hashkeys, command in run.commands():
@@ -49,6 +49,8 @@ if __name__ == "__main__":
                             help="output path for alignment SAM files")
     parser_map.add_argument("-e", "--eval-path", type=str, default="eval/",
                             help="output path for evaluation files from dwgsim")
+    parser_map.add_argument("-t", "--time-path", type=str, default="time/",
+                            help="output path for time of aligner run files")
     parser_map.add_argument("-l", "--log-path", type=str, default="log/",
                             help="output path for standard error log")
     parser_map.add_argument("-m", "--memoize", type=str, default=None,

@@ -31,7 +31,8 @@ class AlignerRun(object):
     CFG file and turn these into a set of commands to run.
     """
     
-    def __init__(self, in1, in2, log_path=None, sam_path=None, eval_path=None, memoize_file=None):
+    def __init__(self, in1, in2, log_path=None, sam_path=None, eval_path=None, 
+                 time_path=None, memoize_file=None):
         """
         Initialize a ConfigSet, given a template
         """
@@ -42,6 +43,7 @@ class AlignerRun(object):
         self._flags = dict()
         self.ref_name = None
         self.ref_path = None
+        self.time_path = time_path
         self.path = None
         self.version = None
         self.command = None
@@ -133,6 +135,7 @@ class AlignerRun(object):
             sam_out = path.join(self.sam_path, make_name(self.name, hashkey, "sam"))
             eval_out = path.join(self.eval_path, make_name(self.name, hashkey, "txt"))
             log_out = path.join(self.log_path, make_name(self.name, hashkey, "txt", "log"))
+            time_out = path.join(self.time_path, make_name(self.name, hashkey, "txt", "time"))
             
             program = self.name if self.path is None else self.name
             
@@ -140,6 +143,7 @@ class AlignerRun(object):
             # this particular set of parameters
             tmpdict = dict(in1=self.in1, in2=self.in2, eval_out=eval_out, 
                            ref=self.ref_path, parameters=paramstr, program=program,
+                           time_out=time_out,
                            sam_out=sam_out, log_out=log_out, evaluator=self.evaluator)
             
             try:
