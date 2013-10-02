@@ -78,9 +78,9 @@ function(parameter.file, dir="eval") {
     # in some cases, our eval file may have additional run data,
     # without hashes in the parameter file. Prune these.
     d.eval <- .loadEvalFiles(dir, d.par$hash)
-    d.eval <- subset(d.eval, hash %in% d.hash$hash)
 
-    d.eval$command <- d.hash$command[match(d.eval$hash, d.hash$hash)]
-    d.eval$parameters <- d.hash$parameters[match(d.eval$hash, d.hash$hash)]
+    d.eval$command <- d.par$command[match(d.eval$hash, d.par$hash)]
+    d.eval$parameters <- d.par$parameters[match(d.eval$hash, d.par$hash)]
     d.eval
 }
+
