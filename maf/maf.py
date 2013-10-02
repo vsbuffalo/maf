@@ -21,10 +21,10 @@ def create_aligner_runs(args):
         run = AlignerRun(args.in1, args.in2, args.log_path, args.sam_path, args.eval_path, time_path=args.time_path, memoize_file=args.memoize)
         with open(config_file) as config_fp:
             run.readfp(config_fp)
-        for hashkeys, command in run.commands():
+        for keyvalstr, hashkeys, command in run.commands():
             param_spaces[config_file] += 1
             if not args.size:
-                args.output_file.write("\t".join([config_file, hashkeys, command]) + "\n")
+                args.output_file.write("\t".join([config_file, hashkeys, command,  keyvalstr]) + "\n")
                 sys.stdout.write(command + "\n")
         aligner_runs[config_file] = run
 

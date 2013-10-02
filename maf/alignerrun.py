@@ -99,26 +99,32 @@ class AlignerRun(object):
         """
         params = list()
         for key, value in self._parameters.items():
-            params.append(["%s %s" % (key, v) for v in value])
+            params.append([(key, v) for v in value])
         for flags in self._flags.values():
             params.append(flags)
-        return product(*params)
-
-    @property
-    def parameter_strings(self):
-        """Parameters in string format to become command, returned a
-        generator.
-        """
-        return (" ".join(params) for params in sorted(list(self.parameters)))
+        return sorted(product(*params))
     
+    def make_paramstr(self, parameters, key_val_sep=" ", param_sep=" "):
+        """Return as stringified version of the parameters, with with
+        separators to turn it into a command, or to return a key/value
+        list for output.
+        """
+        tmp = list()
+        for p in list(parameters):
+            if isinstance(p, tuple):
+                p = key_val_sep.join(p)
+            tmp.append(p)
+        return param_sep.join(tmp)
+
     @property
     def hashkeys(self):
         """Generate a set of hashkeys for the parameters space and few other
         bits of information including aligner name, and version.
         """
         tmp_hash_set = set()
-        for params in self.parameter_strings:
-            keyhash = make_hash_key(" ".join([self.name, self.ref_path, self.version, params]))
+        for params in self.parameters:
+            paramstr = self.make_paramstr(params)
+            keyhash = make_hash_key(" ".join([self.name, self.ref_path, self.version, paramstr]))
             assert (keyhash not in tmp_hash_set) # collision check, just in case
             tmp_hash_set.add(keyhash)
             yield keyhash
@@ -129,9 +135,13 @@ class AlignerRun(object):
 
         command={program} -x {ref} {parameters} -1 {in1} -2 {in2} 2> {log} | tee {aln_out} | {evaluator} > {eval_out}
         """
-        for hashkey, paramstr in izip(self.hashkeys, self.parameter_strings):
+        for hashkey, parameters in izip(self.hashkeys, self.parameters):
+            paramstr = self.make_paramstr(parameters)
+            keyvalstr = self.make_paramstr(parameters, "=", ",")
+
             if hashkey in self.memoized_ids:
                 continue
+
             sam_out = path.join(self.sam_path, make_name(self.name, hashkey, "sam"))
             eval_out = path.join(self.eval_path, make_name(self.name, hashkey, "txt"))
             log_out = path.join(self.log_path, make_name(self.name, hashkey, "txt", "log"))
@@ -147,7 +157,7 @@ class AlignerRun(object):
                            sam_out=sam_out, log_out=log_out, evaluator=self.evaluator)
             
             try:
-                yield (hashkey, string.Formatter().format(self.command, **tmpdict))
+                yield (keyvalstr, hashkey, string.Formatter().format(self.command, **tmpdict))
             except KeyError, e:
                 args = ", ".join(e.args)
                 sys.stderr.write("error: run->command formatter missing arguments: %s\n" % args)
